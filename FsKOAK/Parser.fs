@@ -93,6 +93,7 @@ module Parser =
                     if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
                         Failure "Expected ')' in parenthesis expression."
                     else Success(expr, tokens.[1..])
+                | failure -> failure
         | _ -> Failure "Unkown statement"
     
     and private parseIf (tokens : Token list) = 
