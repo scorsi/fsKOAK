@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\sylva\.Rider2017.3\system\resharper-host\local\Transient\ReSharperHost\v11\SolutionCaches\_FsKOAK.93476521.00" t="ExcludeRecursive" />
+    <e p="C:\Users\sylva\Documents\Code\FsKOAK" t="IncludeFlat">
+      <e p="FsKOAK" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="FsKOAK.fsproj" t="IncludeRecursive" />
+        <e p="Lexer.fs" t="Include" />
+        <e p="Lexer.fsi" t="Include" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Parser.fs" t="Include" />
+        <e p="Parser.fsi" t="Include" />
+        <e p="Program.fs" t="Include" />
+        <e p="test.koak" t="Include" />
+      </e>
+      <e p="FsKOAK.sln" t="IncludeFlat" />
+      <e p="packages" t="ExcludeRecursive" />
+    </e>
+  </component>
+</project>
