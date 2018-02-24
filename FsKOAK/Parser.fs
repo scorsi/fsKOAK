@@ -1,6 +1,7 @@
 namespace Koak
 
 module Parser = 
+    open LLVMSharp
     open Lexer
     open System.Linq.Expressions
     
@@ -32,8 +33,12 @@ module Parser =
     
     exception MissingParenthesis
     
-    let binopPrecedence : Map<string, int> = 
-        Map.empty.Add("+", 100).Add("-", 100).Add("*", 110).Add("/", 110).Add("<", 80).Add(">", 80)
+    let binaryOperators : Map<string, int> = 
+        Map.empty.Add("+", 100).Add("-", 100).Add("*", 110).Add("/", 110).Add("%", 110).Add("=", 10).Add("+=", 10)
+           .Add("-=", 10).Add("*=", 10).Add("/=", 10).Add("%=", 10).Add("<<=", 10).Add(">>=", 10).Add("&=", 10)
+           .Add("^=", 10).Add("|=", 10).Add("==", 70).Add("<=", 80).Add(">=", 80).Add("<", 80).Add(">", 80)
+           .Add("||", 20).Add("&&", 30).Add("|", 40).Add("^", 50).Add("&", 60).Add("<<", 90).Add(">>", 90)
+    let unaryOperators : List<string> = "+" :: "-" :: "!" :: "~" :: []
     
     let private parsePrototypeArguments = 
         let rec parsePrototypeArguments' nodes tokens = 
@@ -83,11 +88,13 @@ module Parser =
         // forExpr
         | Token.Identifier id -> Success(Expr.Variable id, tokens.[1..])
         | Token.Any "(" -> 
-             if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch."
-             else match parseExpr tokens.[1..] with
-             | Success(expr, tokens) ->
-                if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then Failure "Expected ')' in parenthesis expression."
-                else Success(expr, tokens.[1..]) 
+            if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch."
+            else 
+                match parseExpr tokens.[1..] with
+                | Success(expr, tokens) -> 
+                    if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
+                        Failure "Expected ')' in parenthesis expression."
+                    else Success(expr, tokens.[1..])
         | _ -> Failure "Unkown statement"
     
     and private parseIf (tokens : Token list) = 
@@ -110,8 +117,8 @@ module Parser =
     
     and private parseBinop exprPrec lhs (tokens : Token list) = 
         match tokens.[0] with
-        | Token.Any op when Map.containsKey op binopPrecedence -> 
-            let tokenPrec = Map.find op binopPrecedence
+        | Token.Any op when Map.containsKey op binaryOperators -> 
+            let tokenPrec = Map.find op binaryOperators
             if tokenPrec < exprPrec then Success(lhs, tokens)
             else if (List.length tokens) <= 1 then Failure "Invalide right operand"
             else 
@@ -120,8 +127,8 @@ module Parser =
                     if (List.length tokens) <= 0 then Success(Expr.Binary(op, lhs, rhs), tokens)
                     else 
                         match tokens.[0] with
-                        | Token.Any op2 when Map.containsKey op2 binopPrecedence -> 
-                            let nextPrec = Map.find op2 binopPrecedence
+                        | Token.Any op2 when Map.containsKey op2 binaryOperators -> 
+                            let nextPrec = Map.find op2 binaryOperators
                             if tokenPrec < nextPrec then 
                                 match parseBinop (tokenPrec + 1) rhs tokens with
                                 | Success(rhs, tokens) -> Success(Expr.Binary(op, lhs, rhs), tokens)
@@ -129,6 +136,7 @@ module Parser =
                             else Success(Expr.Binary(op, lhs, rhs), tokens)
                         | _ -> Success(Expr.Binary(op, lhs, rhs), tokens)
                 | failure -> failure
+        | Token.Any op -> Failure(String.concat "" ("Unknown binary operator: " :: op :: []))
         | _ -> Success(lhs, tokens)
     
     and private parseExpr tokens = 
@@ -140,10 +148,11 @@ module Parser =
     
     and private parseUnary tokens = 
         match tokens.[0] with
-        | Token.Any op when op <> "(" && op <> ")" -> 
+        | Token.Any op when List.contains op unaryOperators -> 
             match parseUnary tokens.[1..] with
             | Success(unary, tokens) -> Success(Expr.Unary(op, unary), tokens)
             | failure -> failure
+        | Token.Any op -> Failure(String.concat "" ("Unknown unary operator: " :: op :: []))
         | _ -> parsePrimary tokens
     
     let parse tokens = 

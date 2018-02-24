@@ -102,7 +102,7 @@ module Lexer =
                 match str.[0] with
                 | c when c <> '`' -> lexMagicAny' (List.append buf (c :: [])) tokens str.[1..]
                 | _ -> 
-                    let v = String.Concat(Array.ofList buf)
+                    let v = String.Concat(Array.ofList (List.append buf ('`' :: [])))
                     ((List.append tokens ((Any v) :: [])), str)
         lexMagicAny'
     
