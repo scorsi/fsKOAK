@@ -1,10 +1,8 @@
 namespace Koak
 
+open Lexer
+
 module Parser = 
-    open LLVMSharp
-    open Lexer
-    open System.Linq.Expressions
-    
     type Expr = 
         | Double of float
         | Integer of int

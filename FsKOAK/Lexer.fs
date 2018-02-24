@@ -1,8 +1,8 @@
 namespace Koak
 
+open System
+
 module Lexer = 
-    open System
-    
     type Token = 
         | EOS
         | Def
