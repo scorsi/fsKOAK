@@ -9,6 +9,7 @@ let main argv =
     let ret = 
         match Lexer.lex (File.ReadAllText argv.[0]) with
         | Lexer.Success tokens -> 
+            printfn "%A" tokens
             match Parser.parse tokens with
             | Parser.Success nodes -> 
                 printfn "%A" nodes
