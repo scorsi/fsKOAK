@@ -86,8 +86,9 @@ module Lexer =
                 ((List.append tokens ((Any v) :: [])), str)
             else 
                 match str.[0] with
-                | c when c <> ' ' && c <> '\t' && c <> '\r' && c <> '\n' && c <> ';' && c < 'a' && c > 'z' && c < 'A' 
-                         && c > 'Z' && c < '0' && c > '9' -> lexAny' (List.append buf (c :: [])) tokens str.[1..]
+                | c when c <> ' ' && c <> '\t' && c <> '\r' && c <> '\n' && c <> ';' && (c < 'a' || c > 'z') && (c < 'A' 
+                         || c > 'Z') && (c < '0' || c > '9') && c <> '`' -> 
+                    lexAny' (List.append buf (c :: [])) tokens str.[1..]
                 | _ -> 
                     let v = String.Concat(Array.ofList buf)
                     ((List.append tokens ((Any v) :: [])), str)
