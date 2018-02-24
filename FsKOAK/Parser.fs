@@ -81,17 +81,19 @@ module Parser =
         | Token.Boolean v -> Success(Expr.Boolean v, tokens.[1..])
         | Token.Char v -> Success(Expr.Char v, tokens.[1..])
         | Token.If -> 
-            if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch."
+            if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch"
             else parseIf tokens.[1..]
-        // forExpr
+        | Token.For -> 
+            if (List.length tokens) <= 1 then Failure "Expected assignment expression in for loop"
+            else parseFor tokens.[1..]
         | Token.Identifier id -> Success(Expr.Variable id, tokens.[1..])
         | Token.Any "(" -> 
-            if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch."
+            if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch"
             else 
                 match parseExpr tokens.[1..] with
                 | Success(expr, tokens) -> 
                     if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
-                        Failure "Expected ')' in parenthesis expression."
+                        Failure "Expected ')' in parenthesis expression"
                     else Success(expr, tokens.[1..])
                 | failure -> failure
         | _ -> Failure "Unkown statement"
@@ -114,6 +116,56 @@ module Parser =
                 | failure -> failure
         | failure -> failure
     
+    and private parseFor (tokens : Token list) = 
+        match tokens.[0] with
+        | Token.Identifier id -> 
+            if (List.length tokens) < 2 || tokens.[1] <> Token.Any "=" then 
+                Failure "Expected '=' in assignment expression in for loop"
+            else if (List.length tokens) < 3 then Failure "Expected assignment expression in for loop"
+            else 
+                match parseExpr tokens.[2..] with
+                | Success(assignExpr, tokens) -> 
+                    if (List.length tokens) < 1 || tokens.[0] <> Token.Any "," then 
+                        Failure "Expected ',' between assignment expression and condition expression in for loop"
+                    else if (List.length tokens) < 2 then Failure "Expected condition expression in for loop"
+                    else 
+                        match parseExpr tokens.[1..] with
+                        | Success(conditionExpr, tokens) -> 
+                            if (List.length tokens) < 1 then 
+                                Failure "Expected assignment-step expression or body expression in for loop"
+                            else 
+                                match tokens.[0] with
+                                | Token.Any "," -> 
+                                    if (List.length tokens) < 2 then 
+                                        Failure "Expected assignment-step expression in for loop"
+                                    else 
+                                        match parseExpr tokens.[1..] with
+                                        | Success(stepExpr, tokens) -> 
+                                            if (List.length tokens) < 1 || tokens.[0] <> Token.In then 
+                                                Failure "Expected in before body expression in for loop"
+                                            else if (List.length tokens) < 2 then 
+                                                Failure "Expected body expression in for loop"
+                                            else 
+                                                match parseExpr tokens.[1..] with
+                                                | Success(bodyExpr, tokens) -> 
+                                                    Success
+                                                        (Expr.For
+                                                             (id, assignExpr, conditionExpr, Some(stepExpr), bodyExpr), 
+                                                         tokens)
+                                                | failure -> failure
+                                        | failure -> failure
+                                | Token.In -> 
+                                    if (List.length tokens) < 2 then Failure "Expected body expression in for loop"
+                                    else 
+                                        match parseExpr tokens.[1..] with
+                                        | Success(bodyExpr, tokens) -> 
+                                            Success(Expr.For(id, assignExpr, conditionExpr, None, bodyExpr), tokens)
+                                        | failure -> failure
+                                | _ -> Failure "Expected in before body expression in for loop"
+                        | failure -> failure
+                | failure -> failure
+        | _ -> Failure "Expected identifier for assignment in for loop"
+    
     and private parseBinop exprPrec lhs (tokens : Token list) = 
         match tokens.[0] with
         | Token.Any op when Map.containsKey op binaryOperators -> 
@@ -135,7 +187,8 @@ module Parser =
                             else Success(Expr.Binary(op, lhs, rhs), tokens)
                         | _ -> Success(Expr.Binary(op, lhs, rhs), tokens)
                 | failure -> failure
-        | Token.Any op -> Failure(String.concat "" ("Unknown binary operator: " :: op :: []))
+        | Token.Any op when op <> "(" && op <> ")" && op <> "," -> 
+            Failure(String.concat "" ("Unknown binary operator: " :: op :: []))
         | _ -> Success(lhs, tokens)
     
     and private parseExpr tokens = 
@@ -151,7 +204,8 @@ module Parser =
             match parseUnary tokens.[1..] with
             | Success(unary, tokens) -> Success(Expr.Unary(op, unary), tokens)
             | failure -> failure
-        | Token.Any op -> Failure(String.concat "" ("Unknown unary operator: " :: op :: []))
+        | Token.Any op when op <> "(" && op <> ")" && op <> "," -> 
+            Failure(String.concat "" ("Unknown unary operator: " :: op :: []))
         | _ -> parsePrimary tokens
     
     let parse tokens = 
