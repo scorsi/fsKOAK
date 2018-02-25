@@ -1,2 +1,1 @@
-def binary `exp` 3 ( a : int b : int ) : int
-    a * a + b * b;
+toto( a , 3 + 2 );
