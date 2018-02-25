@@ -1,8 +1,1 @@
-def mandelconverger(real:double imag:double iters:double creal:double cimag:double) : void
-    if iters > 255.0 || (real * real + imag * imag > 4.0) then
-        iters
-    else
-        mandelconverger(real * real - imag * imag + creal,
-                        2.0 * real * imag + cimag,
-                        iters + 1.0, creal, cimag)
-;
+real * real + imag * imag < 4.0;

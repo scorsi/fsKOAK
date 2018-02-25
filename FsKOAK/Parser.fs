@@ -66,17 +66,17 @@ module Parser =
            .Add("&", { defaultOperator with precedence = 60 })
            .Add("<<", { defaultOperator with precedence = 90 })
            .Add(">>", { defaultOperator with precedence = 90 })
-           .Add("=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("+=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("-=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("*=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("/=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("%=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("<<=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add(">>=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("&=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("^=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("|=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("+=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("-=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("*=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("/=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("%=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("<<=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add(">>=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("&=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("^=", { defaultOperator with precedence = 10; assoc = Right })
+//           .Add("|=", { defaultOperator with precedence = 10; assoc = Right })
     
     let unaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", defaultOperator).Add("-", defaultOperator).Add("~", defaultOperator)
@@ -211,7 +211,7 @@ module Parser =
             else if (List.length tokens) <= 1 then Failure "Invalide right operand"
             else 
                 match parseUnary tokens.[1..] with
-                | Success(rhs, (tokens : Token list)) -> 
+                | Success(rhs, tokens) -> 
                     if (List.length tokens) <= 0 then Success(Expr.Binary(op, lhs, rhs), tokens)
                     else 
                         match tokens.[0] with
@@ -219,7 +219,7 @@ module Parser =
                             let nextPrec = (Map.find op2 binaryOperators).precedence
                             if tokenPrec < nextPrec then 
                                 match parseBinop (tokenPrec + 1) rhs tokens with
-                                | Success(rhs, tokens) -> Success(Expr.Binary(op, lhs, rhs), tokens)
+                                | Success(rhs, tokens) -> parseBinop exprPrec (Expr.Binary(op, lhs, rhs)) tokens
                                 | failure -> failure
                             else parseBinop exprPrec (Expr.Binary(op, lhs, rhs)) tokens
                         | Token.Any op2 when op2 <> "(" && op2 <> ")" && op2 <> "," && op2 <> ":" -> 
@@ -417,7 +417,7 @@ module Parser =
         | Failure msg -> Failure msg
     
     let parse tokens = 
-        let rec parse' (nodes : Node list) tokens = 
+        let rec parse' nodes tokens = 
             if (List.length tokens) <= 0 then Success nodes
             else 
                 match tokens.[0] with
