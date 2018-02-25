@@ -1,1 +1,1 @@
-for toto = 0, toto < 3, toto += 1 in a;
+1 + 2 : 3;

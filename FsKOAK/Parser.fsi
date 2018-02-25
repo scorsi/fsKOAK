@@ -13,6 +13,7 @@ module Parser =
         | Call of string * Expr array
         | If of Expr * Expr * Expr
         | For of string * Expr * Expr * Expr option * Expr
+        | Statements of Expr list
     
     type Proto = 
         | Prototype of string * (string * string) array * string

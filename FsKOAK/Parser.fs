@@ -15,6 +15,7 @@ module Parser =
         | Call of string * Expr array
         | If of Expr * Expr * Expr
         | For of string * Expr * Expr * Expr option * Expr
+        | Statements of Expr list
     
     type Proto = 
         | Prototype of string * (string * string) array * string
@@ -187,7 +188,7 @@ module Parser =
                             else Success(Expr.Binary(op, lhs, rhs), tokens)
                         | _ -> Success(Expr.Binary(op, lhs, rhs), tokens)
                 | failure -> failure
-        | Token.Any op when op <> "(" && op <> ")" && op <> "," -> 
+        | Token.Any op when op <> "(" && op <> ")" && op <> "," && op <> ":" -> 
             Failure(String.concat "" ("Unknown binary operator: " :: op :: []))
         | _ -> Success(lhs, tokens)
     
@@ -204,9 +205,21 @@ module Parser =
             match parseUnary tokens.[1..] with
             | Success(unary, tokens) -> Success(Expr.Unary(op, unary), tokens)
             | failure -> failure
-        | Token.Any op when op <> "(" && op <> ")" && op <> "," -> 
+        | Token.Any op when op <> "(" && op <> ")" && op <> "," && op <> ":" -> 
             Failure(String.concat "" ("Unknown unary operator: " :: op :: []))
         | _ -> parsePrimary tokens
+    
+    and private parseStatements tokens = 
+        let rec parseStatements' list tokens = 
+            match parseExpr tokens with
+            | Success(expr, tokens) -> 
+                let list = List.append list (expr :: [])
+                if (List.length tokens) > 0 && tokens.[0] = Token.Any ":" then 
+                    if (List.length tokens) > 1 then parseStatements' list tokens.[1..]
+                    else Failure "Expected expression after ':'"
+                else Success(Expr.Statements(list), tokens)
+            | failure -> failure
+        parseStatements' [] tokens
     
     let parse tokens = 
         let rec parse' (nodes : Node list) tokens = 
@@ -226,7 +239,7 @@ module Parser =
                         else parse' nodes tokens.[1..]
                     | Failure msg -> Failure msg
                 | _ -> 
-                    match parseExpr tokens with
+                    match parseStatements tokens with
                     | Success(expr, tokens) -> 
                         if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then Failure "Missing ';'"
                         else parse' (List.append nodes ((Node.TopExpr expr) :: [])) tokens.[1..]
