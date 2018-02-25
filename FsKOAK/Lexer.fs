@@ -45,7 +45,7 @@ module Lexer =
                 ((List.append tokens ((findToken id) :: [])), str)
             else 
                 match str.[0] with
-                | c when (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_' -> 
+                | c when (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' -> 
                     lexIdentifier' (List.append buf (c :: [])) tokens str.[1..]
                 | _ -> 
                     let id = String.Concat(Array.ofList buf)
