@@ -1,4 +1,4 @@
-extern putchar(c:int) : double;
+extern putchar(c:int) : void;
 
 def printdensity(d:double) : double
     if d > 8.0 then

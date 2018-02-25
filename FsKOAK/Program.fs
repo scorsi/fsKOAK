@@ -8,13 +8,13 @@ open System.IO
 let main argv = 
     if (match Lexer.lex (File.ReadAllText argv.[0]) with
         | Lexer.Success tokens -> 
-            printfn "%A" tokens
+//            printfn "%A" tokens
             match Parser.parse tokens with
             | Parser.Success nodes -> 
-                printfn "%A" nodes
+//                printfn "%A" nodes
                 match CodeGenerator.codegen nodes with
                 | CodeGenerator.Success _ -> 
-                    printfn "It works"
+//                    printfn "It works"
                     true
                 | CodeGenerator.Failure msg -> 
                     printfn "Error: %s" msg
