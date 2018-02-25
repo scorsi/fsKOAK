@@ -1,9 +1,1 @@
-def test10 ( ) : int 1;
-def test11 : int 1;
-def test12 1;
-def test20 ( a : int ) : int a;
-def test21 ( a ) : int a;
-def test22 ( a ) a;
-def test30 ( a : int b : int) : int a + b;
-def test31 ( a b ) : int a + b;
-def test32 ( a b ) a + b;
+def binary `exp` 3 ( a : int b : int ) : int a * a + b * b;

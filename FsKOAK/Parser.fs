@@ -3,6 +3,8 @@ namespace Koak
 open Lexer
 
 module Parser = 
+    open System
+    
     type Expr = 
         | Double of float
         | Integer of int
@@ -248,60 +250,125 @@ module Parser =
                 | _ -> Success(args, tokens)
         parsePrototypeArguments' []
     
-    let private parsePrototype = 
-        let rec parsePrototype' tokens = 
-            if (List.length tokens) <= 0 then Failure "Expected identifier in function declaration"
-            else 
-                match tokens.[0] with
-                | Token.Identifier id -> 
-                    if (List.length tokens) <= 1 then Failure "Expected '(' after identifier in function declaration"
-                    else 
-                        match tokens.[1] with
-                        | Token.Any "(" -> 
-                            if (List.length tokens) <= 2 then 
-                                Failure "Expected arguments or ')' after identifier in function declarartion"
-                            else 
-                                match parsePrototypeArguments tokens.[2..] with
-                                | Success(args, tokens) -> 
-                                    if (List.length tokens) <= 0 then 
-                                        Failure "Expected ')' after arguments in function declaration"
-                                    else 
-                                        match tokens.[0] with
-                                        | Token.Any ")" -> 
-                                            if (List.length tokens) <= 1 then 
-                                                Success(Proto.Prototype(id, args, None), tokens.[1..])
-                                            else 
-                                                match tokens.[1] with
-                                                | Token.Any ":" -> 
-                                                    if (List.length tokens) <= 2 then 
-                                                        Failure "Expected type after ':' in function declaration"
-                                                    else 
-                                                        match tokens.[2] with
-                                                        | Token.Identifier t -> 
-                                                            Success(Proto.Prototype(id, args, Some(t)), tokens.[3..])
-                                                        | _ -> Success(Proto.Prototype(id, args, None), tokens.[1..])
-                                                | _ -> Success(Proto.Prototype(id, args, None), tokens.[1..])
-                                        | _ -> Failure "Expected ')' after arguments in function declaration"
-                                | Failure msg -> Failure msg
-                        | Token.Any ":" -> 
-                            if (List.length tokens) <= 2 then Failure "Expected type after ':' in function declaration"
-                            else 
-                                match tokens.[2] with
-                                | Token.Identifier t -> Success(Proto.Prototype(id, [], Some(t)), tokens.[3..])
-                                | _ -> Failure "Expected type after ':' in function declaration"
-                        | _ -> Success(Proto.Prototype(id, [], None), tokens.[1..])
-                | Token.Binary | Token.Unary -> 
-                    let (prefix, kind) = 
-                        match tokens.[0] with
-                        | Token.Binary -> "binary", 2
-                        | Token.Unary -> "unary", 1
+    let private parsePrototype tokens = 
+        if (List.length tokens) <= 0 then Failure "Expected identifier in function declaration"
+        else 
+            match tokens.[0] with
+            | Token.Identifier id -> 
+                if (List.length tokens) <= 1 then Failure "Expected '(' after identifier in function declaration"
+                else 
+                    match tokens.[1] with
+                    | Token.Any "(" -> 
+                        if (List.length tokens) <= 2 then 
+                            Failure "Expected arguments or ')' after identifier in function declarartion"
+                        else 
+                            match parsePrototypeArguments tokens.[2..] with
+                            | Success(args, tokens) -> 
+                                if (List.length tokens) <= 0 then 
+                                    Failure "Expected ')' after arguments in function declaration"
+                                else 
+                                    match tokens.[0] with
+                                    | Token.Any ")" -> 
+                                        if (List.length tokens) <= 1 then 
+                                            Success(Proto.Prototype(id, args, None), tokens.[1..])
+                                        else 
+                                            match tokens.[1] with
+                                            | Token.Any ":" -> 
+                                                if (List.length tokens) <= 2 then 
+                                                    Failure "Expected type after ':' in function declaration"
+                                                else 
+                                                    match tokens.[2] with
+                                                    | Token.Identifier t -> 
+                                                        Success(Proto.Prototype(id, args, Some(t)), tokens.[3..])
+                                                    | _ -> Success(Proto.Prototype(id, args, None), tokens.[1..])
+                                            | _ -> Success(Proto.Prototype(id, args, None), tokens.[1..])
+                                    | _ -> Failure "Expected ')' after arguments in function declaration"
+                            | Failure msg -> Failure msg
+                    | Token.Any ":" -> 
+                        if (List.length tokens) <= 2 then Failure "Expected type after ':' in function declaration"
+                        else 
+                            match tokens.[2] with
+                            | Token.Identifier t -> Success(Proto.Prototype(id, [], Some(t)), tokens.[3..])
+                            | _ -> Failure "Expected type after ':' in function declaration"
+                    | _ -> Success(Proto.Prototype(id, [], None), tokens.[1..])
+            | Token.Binary | Token.Unary -> 
+                let (prefix, nbArgs) = 
                     match tokens.[0] with
-                    | Token.Any op when op <> "(" && op <> ")" && op <> "," && op <> ":" -> Failure "TODO"
+                    | Token.Binary -> "binary", 2
+                    | Token.Unary -> "unary", 1
+                    | _ -> raise (Exception "Unknown Exception") // Should never go here
+                if (List.length tokens) <= 1 then 
+                    Failure("Expected operator after '" + prefix + "' in " + prefix + " function operator declaration")
+                else 
+                    match tokens.[1] with
+                    | Token.Any op when op <> "(" && op <> ")" && op <> "," && op <> ":" -> 
+                        if (List.length tokens) <= 2 then 
+                            Failure
+                                ("Expected precedence or arguments after operator in " + prefix 
+                                 + " function operator declaration")
+                        else 
+                            let parseOperatorDeclaration tokens prec = 
+                                if (List.length tokens) <= 0 then 
+                                    Failure
+                                        ("Expected arguments after '(' in " + prefix + " function operator declaration")
+                                else 
+                                    match parsePrototypeArguments tokens with
+                                    | Success(args, tokens) -> 
+                                        if (List.length args) <> nbArgs then 
+                                            Failure
+                                                ("Unexpected number of arguments in " + prefix 
+                                                 + " function operator declaration")
+                                        else if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
+                                            Failure
+                                                ("Expected ')' after arguments delcaraion in " + prefix 
+                                                 + " function operator declaration")
+                                        else if (List.length tokens) <= 1 then 
+                                            Failure
+                                                ("Expected type or body expression in " + prefix 
+                                                 + " function operator declaration")
+                                        else 
+                                            match tokens.[1] with
+                                            | Token.Any ":" -> 
+                                                if (List.length tokens) <= 1 then 
+                                                    Failure
+                                                        ("Expected type after ':' in " + prefix 
+                                                         + " function operator declaration")
+                                                else 
+                                                    match tokens.[2] with
+                                                    | Token.Identifier t -> 
+                                                        Success
+                                                            (Proto.BinaryPrototype(prefix + op, args, prec, Some(t)), 
+                                                             tokens.[3..])
+                                                    | _ -> 
+                                                        Failure
+                                                            ("Expected type after ':' in " + prefix 
+                                                             + " function operator declaration")
+                                            | _ -> 
+                                                Success
+                                                    (Proto.BinaryPrototype(prefix + op, args, prec, None), tokens.[1..])
+                                    | Failure msg -> Failure msg
+                            match tokens.[2] with
+                            | Token.Integer prec -> 
+                                if (List.length tokens) <= 3 then 
+                                    Failure
+                                        ("Expected arguments after precedence in " + prefix 
+                                         + " function operator declaration")
+                                else 
+                                    match tokens.[3] with
+                                    | Token.Any "(" -> parseOperatorDeclaration tokens.[4..] prec
+                                    | _ -> 
+                                        Failure
+                                            ("Expected arguments after precedence in " + prefix 
+                                             + " function operator declaration")
+                            | Token.Any "(" -> parseOperatorDeclaration tokens.[3..] 50
+                            | _ -> 
+                                Failure
+                                    ("Expected arguments after '" + prefix + "' in " + prefix 
+                                     + " function operator declaration")
                     | _ -> 
                         Failure
-                            (String.concat "" ("Expected operator after " :: prefix :: " in function declaration" :: []))
-                | _ -> Failure "Missing identifier in function definition"
-        parsePrototype'
+                            ("Expected operator after '" + prefix + "' in " + prefix + " function operator declaration")
+            | _ -> Failure "Missing identifier or 'binary' or 'unary' in function definition"
     
     let private parseExtern tokens = 
         match parsePrototype tokens with
