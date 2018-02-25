@@ -18,8 +18,8 @@ module Parser =
         | Statements of Expr list
     
     type Proto = 
-        | Prototype of string * (string * string) array * string
-        | BinaryPrototype of string * (string * string) array * int * string
+        | Prototype of string * (string * string option) list * string option
+        | BinaryPrototype of string * (string * string option) list * int * string option
     
     type Node = 
         | Def of Proto * Expr
@@ -48,73 +48,46 @@ module Parser =
     
     let binaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", { defaultOperator with precedence = 100 })
-           .Add("-", { defaultOperator with precedence = 100 })
-           .Add("*", { defaultOperator with precedence = 110 })
-           .Add("/", { defaultOperator with precedence = 110 })
-           .Add("%", { defaultOperator with precedence = 110 })
-           .Add("==", { defaultOperator with precedence = 70 })
-           .Add("<=", { defaultOperator with precedence = 80 })
-           .Add(">=", { defaultOperator with precedence = 80 })
-           .Add("<", { defaultOperator with precedence = 80 })
-           .Add(">", { defaultOperator with precedence = 80 })
-           .Add("||", { defaultOperator with precedence = 20 })
-           .Add("&&", { defaultOperator with precedence = 30 })
-           .Add("|", { defaultOperator with precedence = 40 })
-           .Add("^", { defaultOperator with precedence = 50 })
-           .Add("&", { defaultOperator with precedence = 60 })
-           .Add("<<", { defaultOperator with precedence = 90 })
-           .Add(">>", { defaultOperator with precedence = 90 })
-           .Add("=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("+=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("-=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("*=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("/=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("%=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("<<=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add(">>=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("&=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("^=", { defaultOperator with precedence = 10; assoc = Right })
-           .Add("|=", { defaultOperator with precedence = 10; assoc = Right })
-           
+           .Add("-", { defaultOperator with precedence = 100 }).Add("*", { defaultOperator with precedence = 110 })
+           .Add("/", { defaultOperator with precedence = 110 }).Add("%", { defaultOperator with precedence = 110 })
+           .Add("==", { defaultOperator with precedence = 70 }).Add("<=", { defaultOperator with precedence = 80 })
+           .Add(">=", { defaultOperator with precedence = 80 }).Add("<", { defaultOperator with precedence = 80 })
+           .Add(">", { defaultOperator with precedence = 80 }).Add("||", { defaultOperator with precedence = 20 })
+           .Add("&&", { defaultOperator with precedence = 30 }).Add("|", { defaultOperator with precedence = 40 })
+           .Add("^", { defaultOperator with precedence = 50 }).Add("&", { defaultOperator with precedence = 60 })
+           .Add("<<", { defaultOperator with precedence = 90 }).Add(">>", { defaultOperator with precedence = 90 })
+           .Add("=", 
+                { defaultOperator with precedence = 10
+                                       assoc = Right }).Add("+=", 
+                                                            { defaultOperator with precedence = 10
+                                                                                   assoc = Right })
+           .Add("-=", 
+                { defaultOperator with precedence = 10
+                                       assoc = Right }).Add("*=", 
+                                                            { defaultOperator with precedence = 10
+                                                                                   assoc = Right })
+           .Add("/=", 
+                { defaultOperator with precedence = 10
+                                       assoc = Right }).Add("%=", 
+                                                            { defaultOperator with precedence = 10
+                                                                                   assoc = Right })
+           .Add("<<=", 
+                { defaultOperator with precedence = 10
+                                       assoc = Right }).Add(">>=", 
+                                                            { defaultOperator with precedence = 10
+                                                                                   assoc = Right })
+           .Add("&=", 
+                { defaultOperator with precedence = 10
+                                       assoc = Right }).Add("^=", 
+                                                            { defaultOperator with precedence = 10
+                                                                                   assoc = Right })
+           .Add("|=", 
+                { defaultOperator with precedence = 10
+                                       assoc = Right })
+    
     let unaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", defaultOperator).Add("-", defaultOperator).Add("~", defaultOperator)
            .Add("!", defaultOperator)
-    
-    let private parsePrototypeArguments = 
-        let rec parsePrototypeArguments' nodes tokens = 
-            if (List.length tokens) <= 0 then Failure ""
-            else Success(nodes, tokens)
-        parsePrototypeArguments'
-    
-    let private parsePrototype = 
-        let rec parsePrototype' nodes tokens = 
-            if (List.length tokens) <= 0 then Failure ""
-            else 
-                try 
-                    let id = 
-                        match tokens.[0] with
-                        | Lexer.Identifier id -> id
-                        | _ -> raise MissingParenthesis
-                    if tokens.[1] <> Lexer.Any "(" then raise MissingParenthesis
-                    let arguments = 
-                        match parsePrototypeArguments nodes tokens.[2..] with
-                        | Success(nNodes, nTokens) -> nNodes
-                        | Failure msg -> raise MissingParenthesis
-                    Success(nodes, tokens)
-                with MissingParenthesis -> Failure "Missing Parenthesis"
-        parsePrototype'
-    
-    let private parseExtern = 
-        let rec parseExtern' nodes tokens = 
-            if (List.length tokens) <= 0 then Failure ""
-            else Success(nodes, tokens)
-        parseExtern'
-    
-    let private parseDef = 
-        let rec parseDef' nodes tokens = 
-            if (List.length tokens) <= 0 then Failure ""
-            else Success(nodes, tokens)
-        parseDef'
     
     let rec private parsePrimary (tokens : Token list) = 
         match tokens.[0] with
@@ -262,24 +235,116 @@ module Parser =
             | failure -> failure
         parseStatements' [] tokens
     
+    let private parsePrototypeArguments = 
+        let rec parsePrototypeArguments' args tokens = 
+            if (List.length tokens) <= 0 then Success(args, tokens)
+            else 
+                match tokens.[0] with
+                | Token.Identifier id -> 
+                    if (List.length tokens) > 1 then 
+                        match tokens.[1] with
+                        | Token.Any ":" -> 
+                            if (List.length tokens) <= 2 then Failure "Expected type after ':' in argument declaraion"
+                            else 
+                                match tokens.[2] with
+                                | Token.Identifier t -> 
+                                    parsePrototypeArguments' (List.append args ((id, Some(t)) :: [])) tokens.[3..]
+                                | _ -> Failure "Expected type after ':' in argument declaration"
+                        | Token.Identifier _ -> 
+                            parsePrototypeArguments' (List.append args ((id, None) :: [])) tokens.[1..]
+                        | _ -> Success(List.append args ((id, None) :: []), tokens.[1..])
+                    else Success(List.append args ((id, None) :: []), tokens.[1..])
+                | _ -> Success(args, tokens)
+        parsePrototypeArguments' []
+    
+    let private parsePrototype = 
+        let rec parsePrototype' tokens = 
+            if (List.length tokens) <= 0 then Failure "Expected identifier in function declaration"
+            else 
+                match tokens.[0] with
+                | Token.Identifier id -> 
+                    if (List.length tokens) <= 1 then Failure "Expected '(' after identifier in function declaration"
+                    else 
+                        match tokens.[1] with
+                        | Token.Any "(" -> 
+                            if (List.length tokens) <= 2 then 
+                                Failure "Expected arguments or ')' after identifier in function declarartion"
+                            else 
+                                match parsePrototypeArguments tokens.[2..] with
+                                | Success(args, tokens) -> 
+                                    if (List.length tokens) <= 0 then 
+                                        Failure "Expected ')' after arguments in function declaration"
+                                    else 
+                                        match tokens.[0] with
+                                        | Token.Any ")" -> 
+                                            if (List.length tokens) <= 1 then 
+                                                Success(Proto.Prototype(id, args, None), tokens.[1..])
+                                            else 
+                                                match tokens.[1] with
+                                                | Token.Any ":" -> 
+                                                    if (List.length tokens) <= 2 then 
+                                                        Failure "Expected type after ':' in function declaration"
+                                                    else 
+                                                        match tokens.[2] with
+                                                        | Token.Identifier t -> 
+                                                            Success(Proto.Prototype(id, args, Some(t)), tokens.[3..])
+                                                        | _ -> Success(Proto.Prototype(id, args, None), tokens.[1..])
+                                                | _ -> Success(Proto.Prototype(id, args, None), tokens.[1..])
+                                        | _ -> Failure "Expected ')' after arguments in function declaration"
+                                | Failure msg -> Failure msg
+                        | Token.Any ":" -> 
+                            if (List.length tokens) <= 2 then Failure "Expected type after ':' in function declaration"
+                            else 
+                                match tokens.[2] with
+                                | Token.Identifier t -> Success(Proto.Prototype(id, [], Some(t)), tokens.[3..])
+                                | _ -> Failure "Expected type after ':' in function declaration"
+                        | _ -> Success(Proto.Prototype(id, [], None), tokens.[1..])
+                | Token.Binary | Token.Unary -> 
+                    let (prefix, kind) = 
+                        match tokens.[0] with
+                        | Token.Binary -> "binary", 2
+                        | Token.Unary -> "unary", 1
+                    match tokens.[0] with
+                    | Token.Any op when op <> "(" && op <> ")" && op <> "," && op <> ":" -> Failure "TODO"
+                    | _ -> 
+                        Failure
+                            (String.concat "" ("Expected operator after " :: prefix :: " in function declaration" :: []))
+                | _ -> Failure "Missing identifier in function definition"
+        parsePrototype'
+    
+    let private parseExtern tokens = 
+        match parsePrototype tokens with
+        | Success(proto, tokens) -> Success(Node.Extern(proto), tokens)
+        | Failure msg -> Failure msg
+    
+    let private parseDef tokens = 
+        match parsePrototype tokens with
+        | Success(proto, tokens) -> 
+            if (List.length tokens) <= 0 then Failure "Expected body expression in function declaration"
+            else 
+                match parseStatements tokens with
+                | Success(expr, tokens) -> Success(Node.Def(proto, expr), tokens)
+                | Failure msg -> Failure msg
+        | Failure msg -> Failure msg
+    
     let parse tokens = 
         let rec parse' (nodes : Node list) tokens = 
             if (List.length tokens) <= 0 then Success nodes
             else 
                 match tokens.[0] with
                 | Lexer.Def -> 
-                    match parseDef nodes tokens.[1..] with
-                    | Success(nodes, tokens) -> 
+                    match parseDef tokens.[1..] with
+                    | Success(def, tokens) -> 
                         if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then 
                             Failure "Missing ';' in function definition"
-                        else parse' nodes tokens.[1..]
+                        else parse' (List.append nodes (def :: [])) tokens.[1..]
                     | Failure msg -> Failure msg
                 | Lexer.Extern -> 
-                    match parseExtern nodes tokens.[1..] with
-                    | Success(nodes, tokens) -> 
+                    match parseExtern tokens.[1..] with
+                    | Success(ext, tokens) -> 
                         if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then 
                             Failure "Missing ';' in extern expression"
-                        else parse' nodes tokens.[1..]
+                        else parse' (List.append nodes (ext :: [])) tokens.[1..]
                     | Failure msg -> Failure msg
                 | _ -> 
                     match parseStatements tokens with

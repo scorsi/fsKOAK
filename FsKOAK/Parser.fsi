@@ -16,8 +16,8 @@ module Parser =
         | Statements of Expr list
     
     type Proto = 
-        | Prototype of string * (string * string) array * string
-        | BinaryPrototype of string * (string * string) array * int * string
+        | Prototype of string * (string * string option) list * string option
+        | BinaryPrototype of string * (string * string option) list * int * string option
     
     type Node = 
         | Def of Proto * Expr
