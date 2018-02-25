@@ -1,0 +1,45 @@
+extern putchar(c:int) : double;
+
+def printdensity(d:double) : double
+    if d > 8.0 then
+        putchar(32)
+    else if d > 4.0 then
+        putchar(46)
+    else if d > 2.0 then
+        putchar(43)
+    else
+        putchar(42)
+;
+
+def mandelconverger(real:double imag:double iters:double creal:double cimag:double) : void
+    if iters > 255.0 || (real * real + imag * imag > 4.0) then
+        iters
+    else
+        mandelconverger(real * real - imag * imag + creal,
+                        2.0 * real * imag + cimag,
+                        iters + 1.0, creal, cimag)
+;
+
+def mandelconverge(real:double imag:double) : void
+    mandelconverger(real, imag, 0.0, real, imag)
+;
+
+def mandelhelp(xmin:double xmax:double xstep:double ymin:double ymax:double ystep:double) : void
+    for y = ymin, y < ymax, ystep in
+        (
+            (
+                for x = xmin, x < xmax, xstep in
+                    printdensity(mandelconverge(x, y))
+            ) :
+            putchar(10)
+        )
+;
+
+def mandel(realstart:double imagstart:double realmag:double imagmag:double) : void
+    mandelhelp(realstart, realstart + realmag * 78.0, realmag,
+               imagstart, imagstart + imagmag * 40.0, imagmag)
+;
+
+def main : int
+    mandel(-2.3, -1.3, 0.05, 0.07) : 0
+;
