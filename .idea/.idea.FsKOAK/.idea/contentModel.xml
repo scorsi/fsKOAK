@@ -10,6 +10,7 @@
         <e p="FsKOAK.fsproj" t="IncludeRecursive" />
         <e p="Lexer.fs" t="Include" />
         <e p="Lexer.fsi" t="Include" />
+        <e p="mandelset.koak" t="Include" />
         <e p="obj" t="ExcludeRecursive" />
         <e p="Parser.fs" t="Include" />
         <e p="Parser.fsi" t="Include" />

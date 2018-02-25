@@ -16,6 +16,7 @@
     <PackageReference Include="LLVMSharp" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="mandelset.koak" />
     <Content Include="test.koak" />
   </ItemGroup>
 </Project>

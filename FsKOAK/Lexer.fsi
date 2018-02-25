@@ -12,6 +12,8 @@ module Lexer =
         | Else
         | For
         | In
+        | LeftParenthesis
+        | RightParenthesis
         | Identifier of string
         | Integer of int
         | Double of float

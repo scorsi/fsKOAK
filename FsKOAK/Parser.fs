@@ -50,42 +50,33 @@ module Parser =
     
     let binaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", { defaultOperator with precedence = 100 })
-           .Add("-", { defaultOperator with precedence = 100 }).Add("*", { defaultOperator with precedence = 110 })
-           .Add("/", { defaultOperator with precedence = 110 }).Add("%", { defaultOperator with precedence = 110 })
-           .Add("==", { defaultOperator with precedence = 70 }).Add("<=", { defaultOperator with precedence = 80 })
-           .Add(">=", { defaultOperator with precedence = 80 }).Add("<", { defaultOperator with precedence = 80 })
-           .Add(">", { defaultOperator with precedence = 80 }).Add("||", { defaultOperator with precedence = 20 })
-           .Add("&&", { defaultOperator with precedence = 30 }).Add("|", { defaultOperator with precedence = 40 })
-           .Add("^", { defaultOperator with precedence = 50 }).Add("&", { defaultOperator with precedence = 60 })
-           .Add("<<", { defaultOperator with precedence = 90 }).Add(">>", { defaultOperator with precedence = 90 })
-           .Add("=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("+=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("-=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("*=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("/=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("%=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("<<=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add(">>=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("&=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("^=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("|=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right })
+           .Add("-", { defaultOperator with precedence = 100 })
+           .Add("*", { defaultOperator with precedence = 110 })
+           .Add("/", { defaultOperator with precedence = 110 })
+           .Add("%", { defaultOperator with precedence = 110 })
+           .Add("==", { defaultOperator with precedence = 70 })
+           .Add("<=", { defaultOperator with precedence = 80 })
+           .Add(">=", { defaultOperator with precedence = 80 })
+           .Add("<", { defaultOperator with precedence = 80 })
+           .Add(">", { defaultOperator with precedence = 80 })
+           .Add("||", { defaultOperator with precedence = 20 })
+           .Add("&&", { defaultOperator with precedence = 30 })
+           .Add("|", { defaultOperator with precedence = 40 })
+           .Add("^", { defaultOperator with precedence = 50 })
+           .Add("&", { defaultOperator with precedence = 60 })
+           .Add("<<", { defaultOperator with precedence = 90 })
+           .Add(">>", { defaultOperator with precedence = 90 })
+           .Add("=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("+=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("-=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("*=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("/=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("%=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("<<=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add(">>=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("&=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("^=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("|=", { defaultOperator with precedence = 10; assoc = Right })
     
     let unaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", defaultOperator).Add("-", defaultOperator).Add("~", defaultOperator)
@@ -107,12 +98,12 @@ module Parser =
             if (List.length tokens) <= 1 then Success(Expr.Variable id, tokens.[1..])
             else 
                 match tokens.[1] with
-                | Token.Any "(" -> 
+                | Token.LeftParenthesis -> 
                     let rec parseCallArgs args tokens = 
                         if (List.length tokens) <= 0 then Success(args, tokens)
                         else 
                             match tokens.[0] with
-                            | Token.Any ")" -> Success(args, tokens)
+                            | Token.RightParenthesis -> Success(args, tokens)
                             | _ -> 
                                 match parseExpr tokens with
                                 | Success(expr, tokens) -> 
@@ -129,16 +120,16 @@ module Parser =
                             if (List.length tokens) <= 0 then Failure "Expected ')' after arguments in call expression"
                             else 
                                 match tokens.[0] with
-                                | Token.Any ")" -> Success(Expr.Call(id, args), tokens.[1..])
+                                | Token.RightParenthesis -> Success(Expr.Call(id, args), tokens.[1..])
                                 | _ -> Failure "Expected ')' after arguments in call expression"
                         | Failure msg -> Failure msg
                 | _ -> Success(Expr.Variable id, tokens.[1..])
-        | Token.Any "(" -> 
+        | Token.LeftParenthesis -> 
             if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch"
             else 
                 match parseStatements tokens.[1..] with
                 | Success(statements, tokens) -> 
-                    if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
+                    if (List.length tokens) <= 0 || tokens.[0] <> Token.RightParenthesis then
                         Failure "Expected ')' in parenthesis expression"
                     else Success(statements, tokens.[1..])
                 | failure -> failure
@@ -298,7 +289,7 @@ module Parser =
                 if (List.length tokens) <= 1 then Failure "Expected '(' after identifier in function declaration"
                 else 
                     match tokens.[1] with
-                    | Token.Any "(" -> 
+                    | Token.LeftParenthesis -> 
                         if (List.length tokens) <= 2 then 
                             Failure "Expected arguments or ')' after identifier in function declarartion"
                         else 
@@ -308,7 +299,7 @@ module Parser =
                                     Failure "Expected ')' after arguments in function declaration"
                                 else 
                                     match tokens.[0] with
-                                    | Token.Any ")" -> 
+                                    | Token.RightParenthesis -> 
                                         if (List.length tokens) <= 1 then 
                                             Success(Proto.Prototype(id, args, None), tokens.[1..])
                                         else 
@@ -358,7 +349,7 @@ module Parser =
                                             Failure
                                                 ("Unexpected number of arguments in " + prefix 
                                                  + " function operator declaration")
-                                        else if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
+                                        else if (List.length tokens) <= 0 || tokens.[0] <> Token.RightParenthesis then 
                                             Failure
                                                 ("Expected ')' after arguments delcaraion in " + prefix 
                                                  + " function operator declaration")
@@ -395,12 +386,12 @@ module Parser =
                                          + " function operator declaration")
                                 else 
                                     match tokens.[3] with
-                                    | Token.Any "(" -> parseOperatorDeclaration tokens.[4..] prec
+                                    | Token.LeftParenthesis -> parseOperatorDeclaration tokens.[4..] prec
                                     | _ -> 
                                         Failure
                                             ("Expected arguments after precedence in " + prefix 
                                              + " function operator declaration")
-                            | Token.Any "(" -> parseOperatorDeclaration tokens.[3..] 50
+                            | Token.LeftParenthesis -> parseOperatorDeclaration tokens.[3..] 50
                             | _ -> 
                                 Failure
                                     ("Expected arguments after '" + prefix + "' in " + prefix 

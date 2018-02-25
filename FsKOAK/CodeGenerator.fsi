@@ -5,4 +5,4 @@ module CodeGenerator =
         | Success of 'a
         | Failure of string
     
-    val codegen : Parser.Node list -> Result<'a>
+    val codegen : Parser.Node list -> Result<unit>

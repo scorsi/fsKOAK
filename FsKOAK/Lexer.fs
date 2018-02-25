@@ -14,6 +14,8 @@ module Lexer =
         | Else
         | For
         | In
+        | LeftParenthesis
+        | RightParenthesis
         | Identifier of string
         | Integer of int
         | Double of float
@@ -86,8 +88,8 @@ module Lexer =
                 ((List.append tokens ((Any v) :: [])), str)
             else 
                 match str.[0] with
-                | c when c <> ' ' && c <> '\t' && c <> '\r' && c <> '\n' && c <> ';' && (c < 'a' || c > 'z') && (c < 'A' 
-                         || c > 'Z') && (c < '0' || c > '9') && c <> '`' -> 
+                | c when c <> ' ' && c <> '\t' && c <> '\r' && c <> '\n' && c <> ';' && (c < 'a' || c > 'z') 
+                         && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c <> '`' -> 
                     lexAny' (List.append buf (c :: [])) tokens str.[1..]
                 | _ -> 
                     let v = String.Concat(Array.ofList buf)
@@ -128,6 +130,9 @@ module Lexer =
                     lex' tokens str
                 // SEMICOLON = End Of Statement
                 | ';' -> lex' (List.append tokens (Token.EOS :: [])) str.[1..]
+                // PARENTHESIS
+                | '(' -> lex' (List.append tokens (Token.LeftParenthesis :: [])) str.[1..]
+                | ')' -> lex' (List.append tokens (Token.RightParenthesis :: [])) str.[1..]
                 // ANY
                 | '`' -> 
                     let (tokens, str) = lexMagicAny ('`' :: []) tokens str.[1..]
