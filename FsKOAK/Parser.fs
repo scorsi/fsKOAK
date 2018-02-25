@@ -48,42 +48,33 @@ module Parser =
     
     let binaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", { defaultOperator with precedence = 100 })
-           .Add("-", { defaultOperator with precedence = 100 }).Add("*", { defaultOperator with precedence = 110 })
-           .Add("/", { defaultOperator with precedence = 110 }).Add("%", { defaultOperator with precedence = 110 })
-           .Add("==", { defaultOperator with precedence = 70 }).Add("<=", { defaultOperator with precedence = 80 })
-           .Add(">=", { defaultOperator with precedence = 80 }).Add("<", { defaultOperator with precedence = 80 })
-           .Add(">", { defaultOperator with precedence = 80 }).Add("||", { defaultOperator with precedence = 20 })
-           .Add("&&", { defaultOperator with precedence = 30 }).Add("|", { defaultOperator with precedence = 40 })
-           .Add("^", { defaultOperator with precedence = 50 }).Add("&", { defaultOperator with precedence = 60 })
-           .Add("<<", { defaultOperator with precedence = 90 }).Add(">>", { defaultOperator with precedence = 90 })
-           .Add("=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("+=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("-=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("*=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("/=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("%=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("<<=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add(">>=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("&=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right }).Add("^=", 
-                                                            { defaultOperator with precedence = 10
-                                                                                   assoc = Right })
-           .Add("|=", 
-                { defaultOperator with precedence = 10
-                                       assoc = Right })
+           .Add("-", { defaultOperator with precedence = 100 })
+           .Add("*", { defaultOperator with precedence = 110 })
+           .Add("/", { defaultOperator with precedence = 110 })
+           .Add("%", { defaultOperator with precedence = 110 })
+           .Add("==", { defaultOperator with precedence = 70 })
+           .Add("<=", { defaultOperator with precedence = 80 })
+           .Add(">=", { defaultOperator with precedence = 80 })
+           .Add("<", { defaultOperator with precedence = 80 })
+           .Add(">", { defaultOperator with precedence = 80 })
+           .Add("||", { defaultOperator with precedence = 20 })
+           .Add("&&", { defaultOperator with precedence = 30 })
+           .Add("|", { defaultOperator with precedence = 40 })
+           .Add("^", { defaultOperator with precedence = 50 })
+           .Add("&", { defaultOperator with precedence = 60 })
+           .Add("<<", { defaultOperator with precedence = 90 })
+           .Add(">>", { defaultOperator with precedence = 90 })
+           .Add("=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("+=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("-=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("*=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("/=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("%=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("<<=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add(">>=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("&=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("^=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("|=", { defaultOperator with precedence = 10; assoc = Right })
     
     let unaryOperators : Map<string, Operator> = 
         Map.empty.Add("+", defaultOperator).Add("-", defaultOperator).Add("~", defaultOperator)
