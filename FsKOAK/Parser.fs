@@ -32,12 +32,53 @@ module Parser =
     
     exception MissingParenthesis
     
-    let binaryOperators : Map<string, int> = 
-        Map.empty.Add("+", 100).Add("-", 100).Add("*", 110).Add("/", 110).Add("%", 110).Add("=", 10).Add("+=", 10)
-           .Add("-=", 10).Add("*=", 10).Add("/=", 10).Add("%=", 10).Add("<<=", 10).Add(">>=", 10).Add("&=", 10)
-           .Add("^=", 10).Add("|=", 10).Add("==", 70).Add("<=", 80).Add(">=", 80).Add("<", 80).Add(">", 80)
-           .Add("||", 20).Add("&&", 30).Add("|", 40).Add("^", 50).Add("&", 60).Add("<<", 90).Add(">>", 90)
-    let unaryOperators : List<string> = "+" :: "-" :: "!" :: "~" :: []
+    type OperatorAssoc = 
+        | Right
+        | Left
+    
+    type Operator = 
+        { precedence : int
+          custom : bool
+          assoc : OperatorAssoc }
+    
+    let defaultOperator = 
+        { precedence = 0
+          custom = false
+          assoc = OperatorAssoc.Left }
+    
+    let binaryOperators : Map<string, Operator> = 
+        Map.empty.Add("+", { defaultOperator with precedence = 100 })
+           .Add("-", { defaultOperator with precedence = 100 })
+           .Add("*", { defaultOperator with precedence = 110 })
+           .Add("/", { defaultOperator with precedence = 110 })
+           .Add("%", { defaultOperator with precedence = 110 })
+           .Add("==", { defaultOperator with precedence = 70 })
+           .Add("<=", { defaultOperator with precedence = 80 })
+           .Add(">=", { defaultOperator with precedence = 80 })
+           .Add("<", { defaultOperator with precedence = 80 })
+           .Add(">", { defaultOperator with precedence = 80 })
+           .Add("||", { defaultOperator with precedence = 20 })
+           .Add("&&", { defaultOperator with precedence = 30 })
+           .Add("|", { defaultOperator with precedence = 40 })
+           .Add("^", { defaultOperator with precedence = 50 })
+           .Add("&", { defaultOperator with precedence = 60 })
+           .Add("<<", { defaultOperator with precedence = 90 })
+           .Add(">>", { defaultOperator with precedence = 90 })
+           .Add("=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("+=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("-=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("*=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("/=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("%=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("<<=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add(">>=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("&=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("^=", { defaultOperator with precedence = 10; assoc = Right })
+           .Add("|=", { defaultOperator with precedence = 10; assoc = Right })
+           
+    let unaryOperators : Map<string, Operator> = 
+        Map.empty.Add("+", defaultOperator).Add("-", defaultOperator).Add("~", defaultOperator)
+           .Add("!", defaultOperator)
     
     let private parsePrototypeArguments = 
         let rec parsePrototypeArguments' nodes tokens = 
@@ -93,7 +134,7 @@ module Parser =
             else 
                 match parseStatements tokens.[1..] with
                 | Success(statements, tokens) -> 
-                    if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then
+                    if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
                         Failure "Expected ')' in parenthesis expression"
                     else Success(statements, tokens.[1..])
                 | failure -> failure
@@ -170,7 +211,7 @@ module Parser =
     and private parseBinop exprPrec lhs (tokens : Token list) = 
         match tokens.[0] with
         | Token.Any op when Map.containsKey op binaryOperators -> 
-            let tokenPrec = Map.find op binaryOperators
+            let tokenPrec = (Map.find op binaryOperators).precedence
             if tokenPrec < exprPrec then Success(lhs, tokens)
             else if (List.length tokens) <= 1 then Failure "Invalide right operand"
             else 
@@ -180,7 +221,7 @@ module Parser =
                     else 
                         match tokens.[0] with
                         | Token.Any op2 when Map.containsKey op2 binaryOperators -> 
-                            let nextPrec = Map.find op2 binaryOperators
+                            let nextPrec = (Map.find op2 binaryOperators).precedence
                             if tokenPrec < nextPrec then 
                                 match parseBinop (tokenPrec + 1) rhs tokens with
                                 | Success(rhs, tokens) -> Success(Expr.Binary(op, lhs, rhs), tokens)
@@ -201,7 +242,7 @@ module Parser =
     
     and private parseUnary tokens = 
         match tokens.[0] with
-        | Token.Any op when List.contains op unaryOperators -> 
+        | Token.Any op when Map.containsKey op unaryOperators -> 
             match parseUnary tokens.[1..] with
             | Success(unary, tokens) -> Success(Expr.Unary(op, unary), tokens)
             | failure -> failure
@@ -229,19 +270,21 @@ module Parser =
                 | Lexer.Def -> 
                     match parseDef nodes tokens.[1..] with
                     | Success(nodes, tokens) -> 
-                        if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then Failure "Missing ';'"
+                        if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then 
+                            Failure "Missing ';' in function definition"
                         else parse' nodes tokens.[1..]
                     | Failure msg -> Failure msg
                 | Lexer.Extern -> 
                     match parseExtern nodes tokens.[1..] with
                     | Success(nodes, tokens) -> 
-                        if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then Failure "Missing ';'"
+                        if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then 
+                            Failure "Missing ';' in extern expression"
                         else parse' nodes tokens.[1..]
                     | Failure msg -> Failure msg
                 | _ -> 
                     match parseStatements tokens with
                     | Success(expr, tokens) -> 
-                        if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then Failure "Missing ';'"
+                        if (List.length tokens) <= 0 || tokens.[0] <> Token.EOS then Failure "Missing ';' in top expr"
                         else parse' (List.append nodes ((Node.TopExpr expr) :: [])) tokens.[1..]
                     | Failure msg -> Failure msg
         parse' [] tokens
