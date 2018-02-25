@@ -10,7 +10,7 @@ module Parser =
         | Variable of string
         | Binary of string * Expr * Expr
         | Unary of string * Expr
-        | Call of string * Expr array
+        | Call of string * Expr list
         | If of Expr * Expr * Expr
         | For of string * Expr * Expr * Expr option * Expr
         | Statements of Expr list
@@ -27,5 +27,17 @@ module Parser =
     type Result<'a> = 
         | Success of 'a
         | Failure of string
+    
+    type OperatorAssoc = 
+        | Right
+        | Left
+    
+    type Operator = 
+        { precedence : int
+          custom : bool
+          assoc : OperatorAssoc }
+    
+    val binaryOperators : Map<string, Operator>
+    val unaryOperators : Map<string, Operator>
     
     val parse : Lexer.Token list -> Result<Node list>

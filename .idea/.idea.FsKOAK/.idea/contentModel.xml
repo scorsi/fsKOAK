@@ -5,6 +5,8 @@
     <e p="C:\Users\sylva\Documents\Code\FsKOAK" t="IncludeFlat">
       <e p="FsKOAK" t="IncludeRecursive">
         <e p="bin" t="ExcludeRecursive" />
+        <e p="CodeGenerator.fs" t="Include" />
+        <e p="CodeGenerator.fsi" t="Include" />
         <e p="FsKOAK.fsproj" t="IncludeRecursive" />
         <e p="Lexer.fs" t="Include" />
         <e p="Lexer.fsi" t="Include" />

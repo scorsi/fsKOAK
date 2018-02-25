@@ -8,6 +8,8 @@
     <Compile Include="Lexer.fs" />
     <Compile Include="Parser.fsi" />
     <Compile Include="Parser.fs" />
+    <Compile Include="CodeGenerator.fsi" />
+    <Compile Include="CodeGenerator.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

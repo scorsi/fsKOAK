@@ -14,7 +14,7 @@ module Parser =
         | Variable of string
         | Binary of string * Expr * Expr
         | Unary of string * Expr
-        | Call of string * Expr array
+        | Call of string * Expr list
         | If of Expr * Expr * Expr
         | For of string * Expr * Expr * Expr option * Expr
         | Statements of Expr list
