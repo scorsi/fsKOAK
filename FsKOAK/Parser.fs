@@ -190,9 +190,12 @@ module Parser =
                             let nextPrec = (Map.find op2 binaryOperators).precedence
                             if tokenPrec < nextPrec then 
                                 match parseBinop (tokenPrec + 1) rhs tokens with
-                                | Success(rhs, tokens) -> Success(Expr.Binary(op, lhs, rhs), tokens)
+                                | Success(rhs, tokens) -> 
+                                    Success(Expr.Binary(op, lhs, rhs), tokens)
                                 | failure -> failure
-                            else Success(Expr.Binary(op, lhs, rhs), tokens)
+                            else parseBinop exprPrec (Expr.Binary(op, lhs, rhs)) tokens
+                        | Token.Any op2 when op2 <> "(" && op2 <> ")" && op2 <> "," && op2 <> ":" -> 
+                            Failure(String.concat "" ("Unknown binary operator: " :: op2 :: []))
                         | _ -> Success(Expr.Binary(op, lhs, rhs), tokens)
                 | failure -> failure
         | Token.Any op when op <> "(" && op <> ")" && op <> "," && op <> ":" -> 

@@ -1,1 +1,2 @@
-def binary `exp` 3 ( a : int b : int ) : int a * a + b * b;
+def binary `exp` 3 ( a : int b : int ) : int
+    a * a + b * b;
