@@ -91,11 +91,11 @@ module Parser =
         | Token.Any "(" -> 
             if (List.length tokens) <= 1 then Failure "Expected condition in conditional branch"
             else 
-                match parseExpr tokens.[1..] with
-                | Success(expr, tokens) -> 
-                    if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then 
+                match parseStatements tokens.[1..] with
+                | Success(statements, tokens) -> 
+                    if (List.length tokens) <= 0 || tokens.[0] <> Token.Any ")" then
                         Failure "Expected ')' in parenthesis expression"
-                    else Success(expr, tokens.[1..])
+                    else Success(statements, tokens.[1..])
                 | failure -> failure
         | _ -> Failure "Unkown statement"
     
