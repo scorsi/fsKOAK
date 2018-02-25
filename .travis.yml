@@ -1,0 +1,13 @@
+language: csharp
+solution: FsKOAK.sln
+
+install:
+  - sudo apt-get install -y gtk-sharp2
+  - nuget restore FsKOAK.sln
+
+matrix:
+  include:
+    - dotnet: 1.1.5
+      mono: none
+      env: DOTNETCORE=1
+    - mono: latest
