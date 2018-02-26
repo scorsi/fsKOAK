@@ -138,6 +138,14 @@ module Lexer =
                     let (tokens, str) = lexMagicAny ('`' :: []) tokens str.[1..]
                     if (String.length str) <= 0 || str.[0] <> '`' then Failure "Magic binary operator must be closed"
                     else lex' tokens str.[1..]
+                | ''' -> 
+                    if (String.length str) <= 2 then 
+                        let (tokens, str) = lexAny (''' :: []) tokens str.[1..]
+                        lex' tokens str
+                    else if str.[2] <> ''' then 
+                        let (tokens, str) = lexAny (''' :: []) tokens str.[1..]
+                        lex' tokens str
+                    else lex' (List.append tokens ((Token.Char str.[1]) :: [])) str.[3..]
                 | c -> 
                     let (tokens, str) = lexAny (c :: []) tokens str.[1..]
                     lex' tokens str
