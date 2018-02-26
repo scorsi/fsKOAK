@@ -429,14 +429,29 @@ module CodeGenerator =
                 if LLVM.VerifyFunction(func, LLVMVerifierFailureAction.LLVMPrintMessageAction) = LLVMBool(0) then 
                     Success()
                 else 
-//                    LLVM.DeleteFunction(func)
+                    //                    LLVM.DeleteFunction(func)
                     Failure "Function verification failed"
             | Failure msg -> 
-//                LLVM.DeleteFunction(func)
+                //                LLVM.DeleteFunction(func)
                 Failure msg
         | Failure msg -> Failure msg
     
     let codegen (nodes : Parser.Node list) = 
+        LLVM.LinkInMCJIT()
+        LLVM.InitializeX86TargetInfo()
+        LLVM.InitializeX86Target()
+        LLVM.InitializeX86TargetMC()
+        let mutable engine = LLVMExecutionEngineRef()
+        let mutable error = ""
+        LLVM.CreateExecutionEngineForModule(&engine, _module, &error) |> ignore
+        let passManager = LLVM.CreateFunctionPassManagerForModule(_module)
+        LLVM.AddBasicAliasAnalysisPass(passManager)
+        LLVM.AddPromoteMemoryToRegisterPass(passManager)
+        LLVM.AddInstructionCombiningPass(passManager)
+        LLVM.AddReassociatePass(passManager)
+        LLVM.AddGVNPass(passManager)
+        LLVM.AddCFGSimplificationPass(passManager)
+        LLVM.InitializeFunctionPassManager(passManager) |> ignore
         let rec codegen' nodes = 
             if (List.length nodes) <= 0 then Success()
             else 
@@ -457,7 +472,8 @@ module CodeGenerator =
                     | _ -> Failure "Unknown error"
                 | _ -> Failure "TODO"
         match codegen' nodes with
-        | Success _ -> 
-            LLVM.PrintModuleToFile(_module, "dump.ir") |> ignore
+        | Success _ ->
+            LLVM.WriteBitcodeToFile(_module, "out.bitcode") |> ignore
+            LLVM.PrintModuleToFile(_module, "out.ir") |> ignore
             Success()
         | failure -> failure
