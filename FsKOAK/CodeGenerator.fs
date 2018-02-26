@@ -108,6 +108,12 @@ module CodeGenerator =
     and private genBinaryCmpGt lhsVal rhsVal = 
         genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUGT LLVMIntPredicate.LLVMIntSGT "cmp_gt_tmp"
     
+    and private genBinaryCmpEgt lhsVal rhsVal = 
+        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUGE LLVMIntPredicate.LLVMIntSGE "cmp_gt_tmp"
+    
+    and private genBinaryCmpElt lhsVal rhsVal = 
+        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealULE LLVMIntPredicate.LLVMIntSLE "cmp_gt_tmp"
+    
     and private genBinaryCmpEq lhsVal rhsVal = 
         genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUEQ LLVMIntPredicate.LLVMIntEQ "cmp_eq_tmp"
     
@@ -158,9 +164,9 @@ module CodeGenerator =
     // UNARY OPERATOR CODE GENERATOR
     //
     and private genUnarySub lhsVal = 
-        if LLVM.TypeOf(lhsVal) = __double.typeRef then genBinarySub lhsVal (createDouble -1.0)
-        else if LLVM.TypeOf(lhsVal) = __integer.typeRef then genBinarySub lhsVal (createInteger -1)
-        else if LLVM.TypeOf(lhsVal) = __char.typeRef then genBinarySub lhsVal (createChar -1)
+        if LLVM.TypeOf(lhsVal) = __double.typeRef then genBinaryMul lhsVal (createDouble -1.0)
+        else if LLVM.TypeOf(lhsVal) = __integer.typeRef then genBinaryMul lhsVal (createInteger -1)
+        else if LLVM.TypeOf(lhsVal) = __char.typeRef then genBinaryMul lhsVal (createChar -1)
         else Failure "Can't apply unary operator on that type"
     
     and private genUnaryCast lhsVal toType = 
@@ -198,6 +204,14 @@ module CodeGenerator =
                                 match genBinaryCmpGt lhsVal rhsVal with
                                 | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
                                 | Failure msg -> Failure msg
+                            | "<=" -> 
+                                match genBinaryCmpElt lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
+                            | ">=" -> 
+                                match genBinaryCmpEgt lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
                             | "==" -> 
                                 match genBinaryCmpEq lhsVal rhsVal with
                                 | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
@@ -229,11 +243,7 @@ module CodeGenerator =
             match op with
             | "+" -> Success lhsVal
             | "-" -> genUnarySub lhsVal
-            | "!" ->
-                if LLVM.TypeOf(lhsVal) = __double.typeRef then genBinaryMul lhsVal (createDouble -1.0)
-                else if LLVM.TypeOf(lhsVal) = __integer.typeRef then genBinaryMul lhsVal (createInteger -1)
-                else if LLVM.TypeOf(lhsVal) = __char.typeRef then genBinaryMul lhsVal (createChar -1)
-                else Failure "Unary '!' not yet implemented on bool"
+            | "!" -> genUnarySub lhsVal
             | _ -> Failure "genUnaryExpr TODO"
         | failure -> failure
     
@@ -477,7 +487,7 @@ module CodeGenerator =
                     | _ -> Failure "Unknown error"
                 | _ -> Failure "TODO"
         match codegen' nodes with
-        | Success _ ->
+        | Success _ -> 
             LLVM.WriteBitcodeToFile(_module, "out.bitcode") |> ignore
             LLVM.PrintModuleToFile(_module, "out.ir") |> ignore
             Success()
