@@ -229,6 +229,11 @@ module CodeGenerator =
             match op with
             | "+" -> Success lhsVal
             | "-" -> genUnarySub lhsVal
+            | "!" ->
+                if LLVM.TypeOf(lhsVal) = __double.typeRef then genBinaryMul lhsVal (createDouble -1.0)
+                else if LLVM.TypeOf(lhsVal) = __integer.typeRef then genBinaryMul lhsVal (createInteger -1)
+                else if LLVM.TypeOf(lhsVal) = __char.typeRef then genBinaryMul lhsVal (createChar -1)
+                else Failure "Unary '!' not yet implemented on bool"
             | _ -> Failure "genUnaryExpr TODO"
         | failure -> failure
     
