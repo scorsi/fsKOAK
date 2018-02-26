@@ -13,7 +13,7 @@ module CodeGenerator =
     //
     // LLVM
     //
-    let _module = LLVM.ModuleCreateWithName("KOAK_LLVM_module_1")
+    let _module = LLVM.ModuleCreateWithName("koak")
     let _builder = LLVM.CreateBuilder()
     
     //
@@ -61,69 +61,115 @@ module CodeGenerator =
         | _ -> Failure "Unknown type"
     
     //
-    // BINARY OPERATOR CODE GENERATOR
-    //
-    let private genBinarySub lhsVal rhsVal = 
-        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFSub(_builder, lhsVal, rhsVal, "sub_tmp"))
-        else Success(LLVM.BuildSub(_builder, lhsVal, rhsVal, "sub_tmp"))
-    
-    let private genBinaryAdd lhsVal rhsVal = 
-        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFAdd(_builder, lhsVal, rhsVal, "add_tmp"))
-        else Success(LLVM.BuildAdd(_builder, lhsVal, rhsVal, "add_tmp"))
-    
-    let private genBinaryMul lhsVal rhsVal = 
-        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFMul(_builder, lhsVal, rhsVal, "mul_tmp"))
-        else Success(LLVM.BuildMul(_builder, lhsVal, rhsVal, "mul_tmp"))
-    
-    let private genBinaryDiv lhsVal rhsVal = 
-        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFDiv(_builder, lhsVal, rhsVal, "div_tmp"))
-        else Success(LLVM.BuildSDiv(_builder, lhsVal, rhsVal, "div_tmp"))
-    
-    let private genBinaryCmp lhsVal rhsVal fpred ipred name = 
-        if LLVM.TypeOf(lhsVal) = __double.typeRef then 
-            Success
-                (LLVM.BuildUIToFP
-                     (_builder, (LLVM.BuildFCmp(_builder, fpred, lhsVal, rhsVal, name)), __double.typeRef, "cast_tmp"))
-        else if LLVM.TypeOf(lhsVal) = __integer.typeRef then 
-            Success
-                (LLVM.BuildIntCast
-                     (_builder, (LLVM.BuildICmp(_builder, ipred, lhsVal, rhsVal, name)), __integer.typeRef, "cast_tmp"))
-        else if LLVM.TypeOf(lhsVal) = __char.typeRef then 
-            Success
-                (LLVM.BuildIntCast
-                     (_builder, (LLVM.BuildICmp(_builder, ipred, lhsVal, rhsVal, name)), __char.typeRef, "cast_tmp"))
-        else if LLVM.TypeOf(lhsVal) = __bool.typeRef then 
-            Success
-                (LLVM.BuildIntCast
-                     (_builder, (LLVM.BuildICmp(_builder, ipred, lhsVal, rhsVal, name)), __bool.typeRef, "cast_tmp"))
-        else Failure "Unknown Type"
-    
-    let private genBinaryLt lhsVal rhsVal = 
-        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealULT LLVMIntPredicate.LLVMIntSLT "cmp_lt_tmp"
-    let private genBinaryGt lhsVal rhsVal = 
-        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUGT LLVMIntPredicate.LLVMIntSGT "cmp_gt_tmp"
-    let private genBinaryEq lhsVal rhsVal = 
-        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUEQ LLVMIntPredicate.LLVMIntEQ "cmp_eq_tmp"
-    let private genBinaryNe lhsVal rhsVal = 
-        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUNE LLVMIntPredicate.LLVMIntNE "cmp_ne_tmp"
-    
-    //
     // UTILS
     //
     let private genZero ofVal = 
         if LLVM.TypeOf(ofVal) = __double.typeRef then createDouble 0.0
         else if LLVM.TypeOf(ofVal) = __integer.typeRef then createInteger 0
-        else if LLVM.TypeOf(ofVal) = __char.typeRef then createChar -1
+        else if LLVM.TypeOf(ofVal) = __char.typeRef then createChar 0
         else createBool false
+    
+    let private genOne ofVal = 
+        if LLVM.TypeOf(ofVal) = __double.typeRef then createDouble 1.0
+        else if LLVM.TypeOf(ofVal) = __integer.typeRef then createInteger 1
+        else if LLVM.TypeOf(ofVal) = __char.typeRef then createChar 1
+        else createBool true
+    
+    //
+    // BINARY OPERATOR CODE GENERATOR
+    //
+    let rec private genBinarySub lhsVal rhsVal = 
+        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFSub(_builder, lhsVal, rhsVal, "sub_tmp"))
+        else Success(LLVM.BuildSub(_builder, lhsVal, rhsVal, "sub_tmp"))
+    
+    and private genBinaryAdd lhsVal rhsVal = 
+        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFAdd(_builder, lhsVal, rhsVal, "add_tmp"))
+        else Success(LLVM.BuildAdd(_builder, lhsVal, rhsVal, "add_tmp"))
+    
+    and private genBinaryMul lhsVal rhsVal = 
+        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFMul(_builder, lhsVal, rhsVal, "mul_tmp"))
+        else Success(LLVM.BuildMul(_builder, lhsVal, rhsVal, "mul_tmp"))
+    
+    and private genBinaryDiv lhsVal rhsVal = 
+        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFDiv(_builder, lhsVal, rhsVal, "div_tmp"))
+        else Success(LLVM.BuildSDiv(_builder, lhsVal, rhsVal, "div_tmp"))
+    
+    and private genBinaryCmp lhsVal rhsVal fpred ipred name = 
+        if LLVM.TypeOf(lhsVal) = __double.typeRef then Success(LLVM.BuildFCmp(_builder, fpred, lhsVal, rhsVal, name))
+        else if LLVM.TypeOf(lhsVal) = __integer.typeRef then 
+            Success(LLVM.BuildICmp(_builder, ipred, lhsVal, rhsVal, name))
+        else if LLVM.TypeOf(lhsVal) = __char.typeRef then Success(LLVM.BuildICmp(_builder, ipred, lhsVal, rhsVal, name))
+        else if LLVM.TypeOf(lhsVal) = __bool.typeRef then Success(LLVM.BuildICmp(_builder, ipred, lhsVal, rhsVal, name))
+        else Failure "Unknown Type"
+    
+    and private genBinaryCmpLt lhsVal rhsVal = 
+        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealULT LLVMIntPredicate.LLVMIntSLT "cmp_lt_tmp"
+    
+    and private genBinaryCmpGt lhsVal rhsVal = 
+        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUGT LLVMIntPredicate.LLVMIntSGT "cmp_gt_tmp"
+    
+    and private genBinaryCmpEq lhsVal rhsVal = 
+        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUEQ LLVMIntPredicate.LLVMIntEQ "cmp_eq_tmp"
+    
+    and private genBinaryCmpNe lhsVal rhsVal = 
+        genBinaryCmp lhsVal rhsVal LLVMRealPredicate.LLVMRealUNE LLVMIntPredicate.LLVMIntNE "cmp_ne_tmp"
+    
+    and private genBinaryCmpAnd lhsVal rhsVal = 
+        match genBinaryCmpNe lhsVal (genZero lhsVal) with
+        | Success lhsValRes -> 
+            match genUnaryCast lhsValRes __integer.typeRef with
+            | Success lhsValRes -> 
+                match genBinaryCmpNe rhsVal (genZero rhsVal) with
+                | Success rhsValRes -> 
+                    match genUnaryCast rhsValRes __integer.typeRef with
+                    | Success rhsValRes -> 
+                        match genBinaryAdd lhsValRes rhsValRes with
+                        | Success addRes -> genBinaryCmpEq addRes (createInteger 2)
+                        | failure -> failure
+                    | failure -> failure
+                | failure -> failure
+            | failure -> failure
+        | failure -> failure
+    
+    and private genBinaryCmpOr lhsVal rhsVal = 
+        match genBinaryCmpNe lhsVal (genZero lhsVal) with
+        | Success lhsValRes -> 
+            match genUnaryCast lhsValRes __integer.typeRef with
+            | Success lhsValRes -> 
+                match genBinaryCmpNe rhsVal (genZero rhsVal) with
+                | Success rhsValRes -> 
+                    match genUnaryCast rhsValRes __integer.typeRef with
+                    | Success rhsValRes -> 
+                        match genBinaryAdd lhsValRes rhsValRes with
+                        | Success addRes -> genBinaryCmpGt addRes (createInteger 0)
+                        | failure -> failure
+                    | failure -> failure
+                | failure -> failure
+            | failure -> failure
+        | failure -> failure
+    
+    and private genBinaryOr lhsVal rhsVal = Success(LLVM.BuildOr(_builder, lhsVal, rhsVal, "or_tmp"))
+    
+    and private genBinaryAnd lhsVal rhsVal = Success(LLVM.BuildAnd(_builder, lhsVal, rhsVal, "and_tmp"))
+    
+    and private genBinaryXor lhsVal rhsVal = Success(LLVM.BuildXor(_builder, lhsVal, rhsVal, "xor_tmp"))
     
     //
     // UNARY OPERATOR CODE GENERATOR
     //
-    let private genUnarySub lhsVal = 
+    and private genUnarySub lhsVal = 
         if LLVM.TypeOf(lhsVal) = __double.typeRef then genBinarySub lhsVal (createDouble -1.0)
         else if LLVM.TypeOf(lhsVal) = __integer.typeRef then genBinarySub lhsVal (createInteger -1)
         else if LLVM.TypeOf(lhsVal) = __char.typeRef then genBinarySub lhsVal (createChar -1)
         else Failure "Can't apply unary operator on that type"
+    
+    and private genUnaryCast lhsVal toType = 
+        if toType <> __double.typeRef && toType <> __void.typeRef then 
+            Success(LLVM.BuildIntCast(_builder, lhsVal, toType, "cast_tmp"))
+        else if toType = __double.typeRef && LLVM.TypeOf(lhsVal) <> __double.typeRef then 
+            Success(LLVM.BuildUIToFP(_builder, lhsVal, toType, "cast_tmp"))
+        else if toType = __double.typeRef then Success(LLVM.BuildFPCast(_builder, lhsVal, toType, "cast_tmp"))
+        else Failure "Can't cast to void type"
     
     //
     // EXPR CODE GENERATOR
@@ -144,10 +190,33 @@ module CodeGenerator =
                             | "-" -> genBinarySub lhsVal rhsVal
                             | "*" -> genBinaryMul lhsVal rhsVal
                             | "/" -> genBinaryDiv lhsVal rhsVal
-                            | "<" -> genBinaryLt lhsVal rhsVal
-                            | ">" -> genBinaryGt lhsVal rhsVal
-                            | "==" -> genBinaryEq lhsVal rhsVal
-                            | "!=" -> genBinaryNe lhsVal rhsVal
+                            | "<" -> 
+                                match genBinaryCmpLt lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
+                            | ">" -> 
+                                match genBinaryCmpGt lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
+                            | "==" -> 
+                                match genBinaryCmpEq lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
+                            | "!=" -> 
+                                match genBinaryCmpNe lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
+                            | "|" -> genBinaryOr lhsVal rhsVal
+                            | "&" -> genBinaryAnd lhsVal rhsVal
+                            | "^" -> genBinaryXor lhsVal rhsVal
+                            | "&&" -> 
+                                match genBinaryCmpAnd lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
+                            | "||" -> 
+                                match genBinaryCmpOr lhsVal rhsVal with
+                                | Success(v) -> genUnaryCast v (LLVM.TypeOf(lhsVal))
+                                | Failure msg -> Failure msg
                             | _ -> Failure "genBinaryExpr TODO"
                     with _ -> Failure "Unkown binary operator"
                 else Failure "Types mismatch in binary operation"
@@ -177,43 +246,59 @@ module CodeGenerator =
                     | Success v -> checkArgs args.[1..] (List.append newArgs (v :: []))
                     | Failure msg -> Failure msg
             match checkArgs args [] with
-            | Success args -> Success(LLVM.BuildCall(_builder, func, (Array.ofList args), "calltmp"))
+            | Success args -> 
+                if LLVM.GetReturnType(LLVM.GetElementType(LLVM.TypeOf(func))) = __void.typeRef then 
+                    Success(LLVM.BuildCall(_builder, func, (Array.ofList args), ""))
+                else Success(LLVM.BuildCall(_builder, func, (Array.ofList args), "call_tmp"))
             | Failure msg -> Failure msg
     
     and private genIfExpr namedValues condExpr thenExpr elseExpr = 
         match genExpr namedValues condExpr with
         | Success(condExprVal) -> 
-            match genBinaryNe condExprVal (genZero condExprVal) with
+            match genBinaryCmpNe condExprVal (genZero condExprVal) with
             | Success(condExprVal) -> 
-                let func = LLVM.GetBasicBlockParent(LLVM.GetInsertBlock(_builder))
+                let startBlock = LLVM.GetInsertBlock(_builder)
+                let func = LLVM.GetBasicBlockParent(startBlock)
                 let thenBlock = LLVM.AppendBasicBlock(func, "then")
-                let elseBlock = LLVM.AppendBasicBlock(func, "else")
-                let mergeBlock = LLVM.AppendBasicBlock(func, "ifcont")
-                LLVM.BuildCondBr(_builder, condExprVal, thenBlock, elseBlock) |> ignore
                 LLVM.PositionBuilderAtEnd(_builder, thenBlock)
                 match genExpr namedValues thenExpr with
                 | Success(thenExprVal) -> 
-                    LLVM.BuildBr(_builder, mergeBlock) |> ignore
-                    let thenBlock = LLVM.GetInsertBlock(_builder)
-                    LLVM.PositionBuilderAtEnd(_builder, elseBlock)
-                    match genExpr namedValues elseExpr with
-                    | Success(elseExprVal) -> 
-                        LLVM.BuildBr(_builder, mergeBlock) |> ignore
-                        let elseBlock = LLVM.GetInsertBlock(_builder)
-                        LLVM.PositionBuilderAtEnd(_builder, mergeBlock)
-                        if LLVM.TypeOf(thenExprVal) <> LLVM.TypeOf(elseExprVal) then 
-                            Failure "Type mismatch in if expression"
-                        else 
-                            let phi = LLVM.BuildPhi(_builder, LLVM.TypeOf(elseExprVal), "if_tmp")
-                            LLVM.AddIncoming
-                                (phi, Array.ofList (thenExprVal :: []), Array.ofList (thenBlock :: []), 1 |> uint32)
-                            LLVM.AddIncoming
-                                (phi, Array.ofList (elseExprVal :: []), Array.ofList (elseBlock :: []), 1 |> uint32)
-                            Success(phi)
-                    | Failure msg -> Failure msg
-                | Failure msg -> Failure msg
-            | Failure msg -> Failure msg
-        | Failure msg -> Failure msg
+                    if LLVM.TypeOf(thenExprVal) = __void.typeRef then 
+                        Failure "'then' expression in if expression must return a value"
+                    else 
+                        let endThenBlock = LLVM.GetInsertBlock(_builder)
+                        let elseBlock = LLVM.AppendBasicBlock(func, "else")
+                        LLVM.PositionBuilderAtEnd(_builder, elseBlock)
+                        match genExpr namedValues elseExpr with
+                        | Success(elseExprVal) -> 
+                            if LLVM.TypeOf(elseExprVal) = __void.typeRef then 
+                                Failure "'else' expression in if expression must return a value"
+                            else if LLVM.TypeOf(thenExprVal) <> LLVM.TypeOf(elseExprVal) then 
+                                Failure 
+                                    "'then' expression and 'else' expression in if expression must be of the same type"
+                            else 
+                                let endElseBlock = LLVM.GetInsertBlock(_builder)
+                                let mergeBlock = LLVM.AppendBasicBlock(func, "ifcont")
+                                LLVM.PositionBuilderAtEnd(_builder, mergeBlock)
+                                let phi = LLVM.BuildPhi(_builder, LLVM.TypeOf(thenExprVal), "if_tmp")
+                                LLVM.AddIncoming
+                                    (phi, Array.ofList (thenExprVal :: []), Array.ofList (endThenBlock :: []), 
+                                     1 |> uint32)
+                                LLVM.AddIncoming
+                                    (phi, Array.ofList (elseExprVal :: []), Array.ofList (endElseBlock :: []), 
+                                     1 |> uint32)
+                                LLVM.PositionBuilderAtEnd(_builder, startBlock)
+                                LLVM.BuildCondBr(_builder, condExprVal, thenBlock, elseBlock) |> ignore
+                                LLVM.PositionBuilderAtEnd(_builder, endThenBlock)
+                                LLVM.BuildBr(_builder, mergeBlock) |> ignore
+                                LLVM.PositionBuilderAtEnd(_builder, endElseBlock)
+                                LLVM.BuildBr(_builder, mergeBlock) |> ignore
+                                LLVM.PositionBuilderAtEnd(_builder, mergeBlock)
+                                Success(phi)
+                        | failure -> failure
+                | failure -> failure
+            | failure -> failure
+        | failure -> failure
     
     and private genForExpr namedValues id assignExpr condExpr stepExpr bodyExpr = 
         match genExpr namedValues assignExpr with
@@ -226,38 +311,35 @@ module CodeGenerator =
             let variable = LLVM.BuildPhi(_builder, LLVM.TypeOf(assignExprVal), id)
             LLVM.AddIncoming
                 (variable, Array.ofList (assignExprVal :: []), Array.ofList (preheaderBlock :: []), 1 |> uint32)
-            let (oldVariable, namedValues) = 
-                if (Map.containsKey id namedValues) then Some(Map.find id namedValues), namedValues
-                else None, (namedValues.Add(id, variable))
-            match genExpr namedValues bodyExpr with
-            | Success(_) -> 
-                match (match stepExpr with
-                       | Some(stepExpr) -> genExpr namedValues stepExpr
-                       | None -> Success(genZero (variable))) with
-                | Success(stepExprVal) -> 
-                    match genBinaryAdd variable stepExprVal with
-                    | Success(nextVal) -> 
-                        match genExpr namedValues condExpr with
-                        | Success(condExprVal) -> 
-                            match genBinaryNe condExprVal (genZero (condExprVal)) with
+            match Map.containsKey id namedValues with
+            | true -> Failure "Redeclaration of variable in for expression"
+            | false -> 
+                let namedValues = namedValues.Add(id, variable)
+                match genExpr namedValues bodyExpr with
+                | Success(_) -> 
+                    match (match stepExpr with
+                           | Some(stepExpr) -> genExpr namedValues stepExpr
+                           | None -> Success(genOne variable)) with
+                    | Success(stepExprVal) -> 
+                        match genBinaryAdd variable stepExprVal with
+                        | Success(nextVal) -> 
+                            match genExpr namedValues condExpr with
                             | Success(condExprVal) -> 
-                                let loopEndBlock = LLVM.GetInsertBlock(_builder)
-                                let afterBlock = LLVM.AppendBasicBlock(func, "afterloop")
-                                LLVM.BuildCondBr(_builder, condExprVal, loopBlock, afterBlock) |> ignore
-                                LLVM.PositionBuilderAtEnd(_builder, afterBlock)
-                                LLVM.AddIncoming
-                                    (variable, (Array.ofList (nextVal :: [])), (Array.ofList (loopEndBlock :: [])), 
-                                     1 |> uint32)
-                                match oldVariable with
-                                | Some(oldVariable) -> namedValues.[id] = oldVariable
-                                | None -> false
-                                |> ignore
-                                Success(genZero (variable))
+                                match genBinaryCmpNe condExprVal (genZero condExprVal) with
+                                | Success(condExprVal) -> 
+                                    let loopEndBlock = LLVM.GetInsertBlock(_builder)
+                                    let afterBlock = LLVM.AppendBasicBlock(func, "after_loop")
+                                    LLVM.BuildCondBr(_builder, condExprVal, loopBlock, afterBlock) |> ignore
+                                    LLVM.PositionBuilderAtEnd(_builder, afterBlock)
+                                    LLVM.AddIncoming
+                                        (variable, (Array.ofList (nextVal :: [])), (Array.ofList (loopEndBlock :: [])), 
+                                         1 |> uint32)
+                                    Success(variable)
+                                | Failure msg -> Failure msg
                             | Failure msg -> Failure msg
                         | Failure msg -> Failure msg
                     | Failure msg -> Failure msg
                 | Failure msg -> Failure msg
-            | Failure msg -> Failure msg
         | Failure msg -> Failure msg
     
     and private genExpr namedValues expr = 
@@ -334,14 +416,23 @@ module CodeGenerator =
             LLVM.PositionBuilderAtEnd(_builder, LLVM.AppendBasicBlock(func, "entry"))
             match genExpr namedValues body with
             | Success(retVal) -> 
-                LLVM.BuildRet(_builder, retVal) |> ignore
+                let retType = 
+                    match retType with
+                    | Some(retType) -> 
+                        match findType retType with
+                        | Success(retType) -> retType
+                        | Failure msg -> __void.typeRef
+                    | _ -> __void.typeRef
+                if retType = __void.typeRef then LLVM.BuildRetVoid(_builder)
+                else LLVM.BuildRet(_builder, retVal)
+                |> ignore
                 if LLVM.VerifyFunction(func, LLVMVerifierFailureAction.LLVMPrintMessageAction) = LLVMBool(0) then 
                     Success()
                 else 
-                    LLVM.DeleteFunction(func)
+//                    LLVM.DeleteFunction(func)
                     Failure "Function verification failed"
             | Failure msg -> 
-                LLVM.DeleteFunction(func)
+//                LLVM.DeleteFunction(func)
                 Failure msg
         | Failure msg -> Failure msg
     
@@ -354,23 +445,19 @@ module CodeGenerator =
                     match proto with
                     | Parser.Proto.Prototype(name, args, retType) -> 
                         match genDef name args retType expr with
-                        | Success _ -> 
-                            LLVM.DumpModule(_module)
-                            codegen' nodes.[1..]
-                        | Failure msg -> 
-                            LLVM.DumpModule(_module)
-                            Failure msg
+                        | Success _ -> codegen' nodes.[1..]
+                        | Failure msg -> Failure msg
                     | _ -> Failure "TODO"
                 | Parser.Node.Extern(proto) -> 
                     match proto with
                     | Parser.Proto.Prototype(name, args, retType) -> 
                         match genProto name args retType with
-                        | Success _ -> 
-                            LLVM.DumpModule(_module)
-                            codegen' nodes.[1..]
-                        | Failure msg -> 
-                            LLVM.DumpModule(_module)
-                            Failure msg
+                        | Success _ -> codegen' nodes.[1..]
+                        | Failure msg -> Failure msg
                     | _ -> Failure "Unknown error"
                 | _ -> Failure "TODO"
-        codegen' nodes
+        match codegen' nodes with
+        | Success _ -> 
+            LLVM.PrintModuleToFile(_module, "dump.ir") |> ignore
+            Success()
+        | failure -> failure
